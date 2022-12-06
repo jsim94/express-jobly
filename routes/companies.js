@@ -11,6 +11,7 @@ const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
 const companyUpdateSchema = require("../schemas/companyUpdate.json");
+const companyFilteringSchema = require("../schemas/companyFiltering.json");
 
 const router = new express.Router();
 
@@ -52,7 +53,18 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
 
 router.get("/", async function (req, res, next) {
   try {
-    const companies = await Company.findAll();
+    const validator = jsonschema.validate(req.body, companyFilteringSchema);
+
+    if (!validator.valid) {
+      const errs = validator.errors.map((e) => e.stack);
+      throw new BadRequestError(errs);
+    }
+
+    // throw 400 error if min is greater than max
+    const { minEmployees: min, maxEmployees: max } = req.body;
+    if (min && max && min > max) throw new BadRequestError("min cannot be greater than max");
+
+    const companies = await Company.findAll(req.body);
     return res.json({ companies });
   } catch (err) {
     return next(err);
