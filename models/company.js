@@ -43,7 +43,7 @@ class Company {
    *
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    *
-   * @param {object} opts { name , min , max }
+   * @param {object} opts { name : string , minEmployees : int  , maxEmployees : int  }
    *
    * @returns {Promise} Promise object containing array of companies matching params
    *
