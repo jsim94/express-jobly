@@ -3,8 +3,9 @@
 /** Routes for users. */
 
 const jsonschema = require("jsonschema");
-
 const express = require("express");
+const pwGen = require("generate-password");
+
 const { ensureUser, ensureAdmin } = require("../middleware/auth");
 const { BadRequestError } = require("../expressError");
 const User = require("../models/user");
@@ -13,7 +14,6 @@ const userNewSchema = require("../schemas/userNew.json");
 const userUpdateSchema = require("../schemas/userUpdate.json");
 
 const router = express.Router();
-
 
 /** POST / { user }  => { user, token }
  *
@@ -28,21 +28,26 @@ const router = express.Router();
  **/
 
 router.post("/", ensureAdmin, async function (req, res, next) {
+  const warning = "password" in req.body ? "Provided password replaced with random placeholder" : undefined;
+  req.body.password = pwGen.generate({
+    length: 20,
+    strict: true,
+  });
+
   try {
     const validator = jsonschema.validate(req.body, userNewSchema);
     if (!validator.valid) {
-      const errs = validator.errors.map(e => e.stack);
+      const errs = validator.errors.map((e) => e.stack);
       throw new BadRequestError(errs);
     }
 
     const user = await User.register(req.body);
     const token = createToken(user);
-    return res.status(201).json({ user, token });
+    return res.status(201).json({ user, token, warning });
   } catch (err) {
     return next(err);
   }
 });
-
 
 /** POST / { username, jobId }  => { applied: jobId }
  *
@@ -78,7 +83,6 @@ router.get("/", ensureAdmin, async function (req, res, next) {
   }
 });
 
-
 /** GET /[username] => { user }
  *
  * Returns { username, firstName, lastName, isAdmin }
@@ -95,7 +99,6 @@ router.get("/:username", ensureUser, async function (req, res, next) {
   }
 });
 
-
 /** PATCH /[username] { user } => { user }
  *
  * Data can include:
@@ -110,7 +113,7 @@ router.patch("/:username", ensureUser, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, userUpdateSchema);
     if (!validator.valid) {
-      const errs = validator.errors.map(e => e.stack);
+      const errs = validator.errors.map((e) => e.stack);
       throw new BadRequestError(errs);
     }
 
@@ -120,7 +123,6 @@ router.patch("/:username", ensureUser, async function (req, res, next) {
     return next(err);
   }
 });
-
 
 /** DELETE /[username]  =>  { deleted: username }
  *
@@ -135,6 +137,5 @@ router.delete("/:username", ensureUser, async function (req, res, next) {
     return next(err);
   }
 });
-
 
 module.exports = router;
