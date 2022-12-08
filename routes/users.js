@@ -44,6 +44,24 @@ router.post("/", ensureAdmin, async function (req, res, next) {
 });
 
 
+/** POST / { username, jobId }  => { applied: jobId }
+ *
+ *
+ * This returns the newly created user and an authentication token for them:
+ *  {user: { username, firstName, lastName, email, isAdmin }, token }
+ *
+ * Authorization required: auth user
+ **/
+
+router.post("/:username/jobs/:jobId", ensureUser, async function (req, res, next) {
+  try {
+    const app = await User.applyForJob(req.params);
+    return res.json({ applied: app.jobId });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 /** GET / => { users: [ {username, firstName, lastName, email }, ... ] }
  *
  * Returns list of all users.

@@ -12,6 +12,7 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  getJob1Id,
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -34,20 +35,20 @@ describe("authenticate", function () {
   });
 
   test("unauth if no such user", async function () {
+    expect.assertions(1);
     try {
       await User.authenticate("nope", "password");
-      fail();
     } catch (err) {
-      expect(err instanceof UnauthorizedError).toBeTruthy();
+      expect(err).toBeInstanceOf(UnauthorizedError);
     }
   });
 
   test("unauth if wrong password", async function () {
+    expect.assertions(1);
     try {
       await User.authenticate("c1", "wrong");
-      fail();
     } catch (err) {
-      expect(err instanceof UnauthorizedError).toBeTruthy();
+      expect(err).toBeInstanceOf(UnauthorizedError);
     }
   });
 });
@@ -89,6 +90,7 @@ describe("register", function () {
   });
 
   test("bad request with dup data", async function () {
+    expect.assertions(1);
     try {
       await User.register({
         ...newUser,
@@ -98,9 +100,8 @@ describe("register", function () {
         ...newUser,
         password: "password",
       });
-      fail();
     } catch (err) {
-      expect(err instanceof BadRequestError).toBeTruthy();
+      expect(err).toBeInstanceOf(BadRequestError);
     }
   });
 });
@@ -140,15 +141,23 @@ describe("get", function () {
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      jobs: [
+        {
+          job_id: expect.any(Number),
+        },
+        {
+          job_id: expect.any(Number),
+        },
+      ],
     });
   });
 
   test("not found if no such user", async function () {
+    expect.assertions(1);
     try {
       await User.get("nope");
-      fail();
     } catch (err) {
-      expect(err instanceof NotFoundError).toBeTruthy();
+      expect(err).toBeInstanceOf(NotFoundError);
     }
   });
 });
@@ -189,12 +198,12 @@ describe("update", function () {
 
   test("not found if no such user", async function () {
     try {
+      expect.assertions(1);
       await User.update("nope", {
         firstName: "test",
       });
-      fail();
     } catch (err) {
-      expect(err instanceof NotFoundError).toBeTruthy();
+      expect(err).toBeInstanceOf(NotFoundError);
     }
   });
 
@@ -202,9 +211,8 @@ describe("update", function () {
     expect.assertions(1);
     try {
       await User.update("c1", {});
-      fail();
     } catch (err) {
-      expect(err instanceof BadRequestError).toBeTruthy();
+      expect(err).toBeInstanceOf(BadRequestError);
     }
   });
 });
@@ -214,17 +222,57 @@ describe("update", function () {
 describe("remove", function () {
   test("works", async function () {
     await User.remove("u1");
-    const res = await db.query(
-        "SELECT * FROM users WHERE username='u1'");
+    const res = await db.query("SELECT * FROM users WHERE username='u1'");
     expect(res.rows.length).toEqual(0);
   });
 
   test("not found if no such user", async function () {
+    expect.assertions(1);
     try {
       await User.remove("nope");
-      fail();
     } catch (err) {
-      expect(err instanceof NotFoundError).toBeTruthy();
+      expect(err).toBeInstanceOf(NotFoundError);
+    }
+  });
+});
+
+/************************************** remove */
+
+describe("apply for job", function () {
+  test("works", async function () {
+    const jobId = await getJob1Id();
+    const res = await User.applyForJob({ username: "u2", jobId: jobId });
+
+    expect(res).toEqual({ jobId });
+  });
+
+  test("not found if no such user", async function () {
+    expect.assertions(1);
+    const jobId = await getJob1Id();
+    try {
+      const res = await User.applyForJob({ username: "u0", jobId: jobId });
+    } catch (err) {
+      expect(err).toBeInstanceOf(NotFoundError);
+    }
+  });
+
+  test("not found if no such job", async function () {
+    expect.assertions(1);
+    try {
+      const res = await User.applyForJob({ username: "u2", jobId: 1 });
+    } catch (err) {
+      expect(err).toBeInstanceOf(NotFoundError);
+    }
+  });
+
+  test("bad request if duplicate application", async function () {
+    expect.assertions(1);
+    const jobId = await getJob1Id();
+    try {
+      await User.applyForJob({ username: "u1", jobId: jobId });
+      await User.applyForJob({ username: "u1", jobId: jobId });
+    } catch (err) {
+      expect(err).toBeInstanceOf(BadRequestError);
     }
   });
 });

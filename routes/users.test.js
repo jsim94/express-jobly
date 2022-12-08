@@ -12,7 +12,8 @@ const {
   commonAfterEach,
   commonAfterAll,
   u1Token,
-  u2Token
+  u2Token,
+  getJob1Id,
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -113,6 +114,55 @@ describe("POST /users", function () {
   });
 });
 
+/************************************** POST /users/:username/job/:jobId */
+
+describe("POST /users/:username/job/:jobId", function () {
+  test("works for auth user", async function () {
+    const jobId = await getJob1Id();
+    const resp = await request(app).post(`/users/u2/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      applied: jobId,
+    });
+  });
+
+  test("works for admin", async function () {
+    const jobId = await getJob1Id();
+    const resp = await request(app).post(`/users/u3/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      applied: jobId,
+    });
+  });
+
+  test("unauth for unauth user", async function () {
+    const jobId = await getJob1Id();
+    const resp = await request(app).post(`/users/u1/jobs/${jobId}`).set("authorization", `Bearer ${u2Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("not found for no user", async function () {
+    const jobId = await getJob1Id();
+    const resp = await request(app).post(`/users/u0/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(404);
+  });
+
+  test("not found for no job", async function () {
+    const resp = await request(app).post(`/users/u1/jobs/1`).set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(404);
+  });
+
+  test("bad request for duplicate", async function () {
+    const jobId = await getJob1Id();
+    const dupeReq = async () => {
+      return await request(app).post(`/users/u1/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+    };
+    await dupeReq();
+    const resp = await dupeReq();
+    expect(resp.statusCode).toEqual(400);
+  });
+});
+
 /************************************** GET /users */
 
 describe("GET /users", function () {
@@ -186,6 +236,14 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: true,
+        jobs: [
+          {
+            job_id: expect.any(Number),
+          },
+          {
+            job_id: expect.any(Number),
+          },
+        ],
       },
     });
   });
