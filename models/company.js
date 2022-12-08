@@ -2,7 +2,8 @@
 
 const db = require("../db");
 const { BadRequestError, NotFoundError } = require("../expressError");
-const { sqlForPartialUpdate } = require("../helpers/sql");
+const { sqlForPartialUpdate, sqlForWhereString } = require("../helpers/sql");
+const { checkAllowedKeys } = require("../helpers/checkAllowedKeys");
 
 /** Related functions for companies. */
 
@@ -41,51 +42,42 @@ class Company {
 
   /** Find all companies.
    *
-   * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
+   *  Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    *
-   * @param {object} opts { name : string , minEmployees : int  , maxEmployees : int  }
+   *  @param {object} opts company filter options
+   *    @param {string} opts.name name filter
+   *    @param {int} opts.minEmployees minimum employees filter
+   *    @param {int} opts.maxEmployees maximum employees filter
    *
-   * @returns {Promise} Promise object containing array of companies matching params
+   *  @returns {Promise<object>} Promise object containing array of companies matching params
    *
-   * */
+   **/
 
   static async findAll(opts = {}) {
-    const ALLOWED_KEYS = ["name", "minEmployees", "maxEmployees"];
     // throw error if 'opts' param has unallowed key
-    Object.keys(opts).forEach((key) => {
-      if (!ALLOWED_KEYS.includes(key)) throw new Error(`ValueError: key "${key}" not allowed`);
-    });
+    checkAllowedKeys(opts, ["name", "minEmployees", "maxEmployees"]);
 
     const { name, minEmployees: min, maxEmployees: max } = opts;
-    let nameString, rangeString, whereString;
+    let paramStrings = {};
     let params = [];
 
     // generate a WHERE *name* string
     if (name) {
       params.push(name);
-      nameString = `name ILIKE $${params.length}`;
+      paramStrings.nameString = `name ILIKE $${params.length}`;
     }
 
     // generate a WHERE *range* string
     if (min && max) {
       params.push(min, max);
-      rangeString = `num_employees BETWEEN $${params.length - 1} AND $${params.length}`;
-    } else if (min) {
-      params.push(min);
-      rangeString = `num_employees >= $${params.length}`;
-    } else if (max) {
-      params.push(max);
-      rangeString = `num_employees <= $${params.length}`;
+      paramStrings.rangeString = `num_employees BETWEEN $${params.length - 1} AND $${params.length}`;
+    } else if (min || max) {
+      params.push(min || max);
+      paramStrings.rangeString = `num_employees ${min ? ">=" : "<="} $${params.length}`;
     }
 
     // generate the entire 'WHERE' string
-    if (nameString && rangeString) {
-      whereString = `WHERE (${nameString}) AND (${rangeString})`;
-    } else if (nameString) {
-      whereString = `WHERE ${nameString}`;
-    } else if (rangeString) {
-      whereString = `WHERE ${rangeString}`;
-    }
+    const whereString = sqlForWhereString(paramStrings);
 
     const companiesRes = await db.query(
       ` SELECT handle,
@@ -104,14 +96,15 @@ class Company {
   /** Given a company handle, return data about company.
    *
    * Returns { handle, name, description, numEmployees, logoUrl, jobs }
-   *   where jobs is [{ id, title, salary, equity, companyHandle }, ...]
+   *   where jobs is [{ id, title, salary, equity }, ...]
    *
    * Throws NotFoundError if not found.
    **/
 
   static async get(handle) {
     const companyRes = await db.query(
-      ` SELECT handle,
+      ` SELECT 
+          handle,
           name,
           description,
           num_employees AS "numEmployees",
@@ -124,6 +117,19 @@ class Company {
     const company = companyRes.rows[0];
 
     if (!company) throw new NotFoundError(`No company: ${handle}`);
+
+    const jobsRes = await db.query(
+      ` SELECT
+          id,
+          title,
+          salary,
+          equity
+        FROM jobs
+        WHERE company_handle = $1`,
+      [handle]
+    );
+
+    if (jobsRes.rows.length > 0) company.jobs = jobsRes.rows;
 
     return company;
   }

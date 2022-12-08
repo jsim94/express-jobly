@@ -1,16 +1,40 @@
 const { BadRequestError } = require("../expressError");
 
-/** Generates a SQL "Set" string and array of values.
+/** Generates a SQL "WHERE" string from passed 'where' clause strings
  *
- *  dataToUpdate: Object of keys/values to update
+ *  @param {array} paramStrings strings to add to WHERE statement
  *
- *  jsToSql: object of javascript name keys and sql name values
- *
- *  returns: object containing SQL SET string and array of values.
+ *  @returns {string} WHERE string to insert into sql query, or undefined
  *
  **/
 
-function sqlForPartialUpdate(dataToUpdate, jsToSql) {
+function sqlForWhereString(paramStrings) {
+  const whereKeys = Object.keys(paramStrings);
+  let whereString;
+  if (whereKeys.length > 0) {
+    whereString = "WHERE ";
+
+    whereKeys.forEach((key, idx) => {
+      if (idx !== 0) {
+        whereString += " AND ";
+      }
+      whereString += paramStrings[key];
+    });
+  }
+  return whereString;
+}
+
+/** Generates a SQL "Set" string and array of values.
+ *
+ *  @param {object} dataToUpdate keys/values to update
+ *
+ *  @param {object} jsToSql javascript name keys and sql name values
+ *
+ *  returns object containing SQL SET string and array of values.
+ *
+ **/
+
+function sqlForPartialUpdate(dataToUpdate, jsToSql = {}) {
   const keys = Object.keys(dataToUpdate);
   if (keys.length === 0) throw new BadRequestError("No data");
 
@@ -23,4 +47,7 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   };
 }
 
-module.exports = { sqlForPartialUpdate };
+module.exports = {
+  sqlForPartialUpdate,
+  sqlForWhereString
+};

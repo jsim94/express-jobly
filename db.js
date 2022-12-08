@@ -1,7 +1,11 @@
 "use strict";
 /** Database setup for jobly. */
-const { Pool } = require("pg");
+const { Pool, types } = require("pg");
 const { getDatabaseUri, DB_HOST, DB_PW } = require("./config");
+
+types.setTypeParser(1700, function (val) {
+  return parseFloat(val);
+});
 
 let pool;
 

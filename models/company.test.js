@@ -151,15 +151,29 @@ describe("get", function () {
       description: "Desc1",
       numEmployees: 1,
       logoUrl: "http://c1.img",
+      jobs: [
+        {
+          equity: 0,
+          id: expect.any(Number),
+          salary: 20000,
+          title: "j1",
+        },
+        {
+          equity: 0.8,
+          id: expect.any(Number),
+          salary: 40000,
+          title: "j2",
+        },
+      ],
     });
   });
 
   test("not found if no such company", async function () {
+    expect.assertions(1);
     try {
       await Company.get("nope");
-      fail();
     } catch (err) {
-      expect(err instanceof NotFoundError).toBeTruthy();
+      expect(err).toBeInstanceOf(NotFoundError);
     }
   });
 });
@@ -228,20 +242,20 @@ describe("update", function () {
   });
 
   test("not found if no such company", async function () {
+    expect.assertions(1);
     try {
       await Company.update("nope", updateData);
-      fail();
     } catch (err) {
-      expect(err instanceof NotFoundError).toBeTruthy();
+      expect(err).toBeInstanceOf(NotFoundError);
     }
   });
 
   test("bad request with no data", async function () {
+    expect.assertions(1);
     try {
       await Company.update("c1", {});
-      fail();
     } catch (err) {
-      expect(err instanceof BadRequestError).toBeTruthy();
+      expect(err).toBeInstanceOf(BadRequestError);
     }
   });
 });
@@ -256,11 +270,11 @@ describe("remove", function () {
   });
 
   test("not found if no such company", async function () {
+    expect.assertions(1);
     try {
       await Company.remove("nope");
-      fail();
     } catch (err) {
-      expect(err instanceof NotFoundError).toBeTruthy();
+      expect(err).toBeInstanceOf(NotFoundError);
     }
   });
 });
