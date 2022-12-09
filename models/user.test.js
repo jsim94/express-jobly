@@ -143,10 +143,12 @@ describe("get", function () {
       isAdmin: false,
       jobs: [
         {
-          job_id: expect.any(Number),
+          jobId: expect.any(Number),
+          appState: "applied",
         },
         {
-          job_id: expect.any(Number),
+          jobId: expect.any(Number),
+          appState: "interested",
         },
       ],
     });
@@ -236,13 +238,12 @@ describe("remove", function () {
   });
 });
 
-/************************************** remove */
+/************************************** apply */
 
 describe("apply for job", function () {
   test("works", async function () {
     const jobId = await getJob1Id();
-    const res = await User.applyForJob({ username: "u2", jobId: jobId });
-
+    const res = await User.applyForJob({ username: "u2", jobId: jobId }, "applied");
     expect(res).toEqual({ jobId });
   });
 
@@ -250,7 +251,7 @@ describe("apply for job", function () {
     expect.assertions(1);
     const jobId = await getJob1Id();
     try {
-      const res = await User.applyForJob({ username: "u0", jobId: jobId });
+      const res = await User.applyForJob({ username: "u0", jobId: jobId }, "applied");
     } catch (err) {
       expect(err).toBeInstanceOf(NotFoundError);
     }
@@ -259,7 +260,7 @@ describe("apply for job", function () {
   test("not found if no such job", async function () {
     expect.assertions(1);
     try {
-      const res = await User.applyForJob({ username: "u2", jobId: 1 });
+      const res = await User.applyForJob({ username: "u2", jobId: 1 }, "applied");
     } catch (err) {
       expect(err).toBeInstanceOf(NotFoundError);
     }
@@ -269,8 +270,8 @@ describe("apply for job", function () {
     expect.assertions(1);
     const jobId = await getJob1Id();
     try {
-      await User.applyForJob({ username: "u1", jobId: jobId });
-      await User.applyForJob({ username: "u1", jobId: jobId });
+      await User.applyForJob({ username: "u1", jobId: jobId }, "applied");
+      await User.applyForJob({ username: "u1", jobId: jobId }, "applied");
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestError);
     }

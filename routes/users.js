@@ -60,7 +60,7 @@ router.post("/", ensureAdmin, async function (req, res, next) {
 
 router.post("/:username/jobs/:jobId", ensureUser, async function (req, res, next) {
   try {
-    const app = await User.applyForJob(req.params);
+    const app = await User.applyForJob(req.params, req.body.appState);
     return res.json({ applied: app.jobId });
   } catch (err) {
     return next(err);

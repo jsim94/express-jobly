@@ -115,7 +115,10 @@ describe("POST /users", function () {
 describe("POST /users/:username/job/:jobId", function () {
   test("works for auth user", async function () {
     const jobId = await getJob1Id();
-    const resp = await request(app).post(`/users/u2/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+    const resp = await request(app)
+      .post(`/users/u2/jobs/${jobId}`)
+      .send({ appState: "applied" })
+      .set("authorization", `Bearer ${u1Token}`);
     expect(resp.statusCode).toEqual(200);
     expect(resp.body).toEqual({
       applied: jobId,
@@ -124,7 +127,10 @@ describe("POST /users/:username/job/:jobId", function () {
 
   test("works for admin", async function () {
     const jobId = await getJob1Id();
-    const resp = await request(app).post(`/users/u3/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+    const resp = await request(app)
+      .post(`/users/u3/jobs/${jobId}`)
+      .send({ appState: "applied" })
+      .set("authorization", `Bearer ${u1Token}`);
     expect(resp.statusCode).toEqual(200);
     expect(resp.body).toEqual({
       applied: jobId,
@@ -133,28 +139,48 @@ describe("POST /users/:username/job/:jobId", function () {
 
   test("unauth for unauth user", async function () {
     const jobId = await getJob1Id();
-    const resp = await request(app).post(`/users/u1/jobs/${jobId}`).set("authorization", `Bearer ${u2Token}`);
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${jobId}`)
+      .send({ appState: "applied" })
+      .set("authorization", `Bearer ${u2Token}`);
     expect(resp.statusCode).toEqual(401);
   });
 
   test("not found for no user", async function () {
     const jobId = await getJob1Id();
-    const resp = await request(app).post(`/users/u0/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+    const resp = await request(app)
+      .post(`/users/u0/jobs/${jobId}`)
+      .send({ appState: "applied" })
+      .set("authorization", `Bearer ${u1Token}`);
     expect(resp.statusCode).toEqual(404);
   });
 
   test("not found for no job", async function () {
-    const resp = await request(app).post(`/users/u1/jobs/1`).set("authorization", `Bearer ${u1Token}`);
+    const resp = await request(app)
+      .post(`/users/u1/jobs/1`)
+      .send({ appState: "applied" })
+      .set("authorization", `Bearer ${u1Token}`);
     expect(resp.statusCode).toEqual(404);
   });
 
   test("bad request for duplicate", async function () {
     const jobId = await getJob1Id();
     const dupeReq = async () => {
-      return await request(app).post(`/users/u1/jobs/${jobId}`).set("authorization", `Bearer ${u1Token}`);
+      return await request(app)
+        .post(`/users/u1/jobs/${jobId}`)
+        .send({ appState: "applied" })
+        .set("authorization", `Bearer ${u1Token}`);
     };
     await dupeReq();
     const resp = await dupeReq();
+    expect(resp.statusCode).toEqual(400);
+  });
+
+  test("bad request for unallowed state", async function () {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/1`)
+      .send({ appState: "happy" })
+      .set("authorization", `Bearer ${u1Token}`);
     expect(resp.statusCode).toEqual(400);
   });
 });
@@ -234,10 +260,12 @@ describe("GET /users/:username", function () {
         isAdmin: true,
         jobs: [
           {
-            job_id: expect.any(Number),
+            jobId: expect.any(Number),
+            appState: "applied",
           },
           {
-            job_id: expect.any(Number),
+            jobId: expect.any(Number),
+            appState: "applied",
           },
         ],
       },

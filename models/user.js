@@ -25,13 +25,13 @@ class User {
     // try to find the user first
     const result = await db.query(
       `SELECT username,
-                  password,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
-           WHERE username = $1`,
+          password,
+          first_name AS "firstName",
+          last_name AS "lastName",
+          email,
+          is_admin AS "isAdmin"
+        FROM users
+        WHERE username = $1`,
       [username],
     );
 
@@ -59,8 +59,8 @@ class User {
   static async register({ username, password, firstName, lastName, email, isAdmin }) {
     const duplicateCheck = await db.query(
       `SELECT username
-           FROM users
-           WHERE username = $1`,
+        FROM users
+        WHERE username = $1`,
       [username]
     );
 
@@ -72,14 +72,14 @@ class User {
 
     const result = await db.query(
       `INSERT INTO users
-           (username,
-            password,
-            first_name,
-            last_name,
-            email,
-            is_admin)
-           VALUES ($1, $2, $3, $4, $5, $6)
-           RETURNING username, first_name AS "firstName", last_name AS "lastName", email, is_admin AS "isAdmin"`,
+          (username,
+          password,
+          first_name,
+          last_name,
+          email,
+          is_admin)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING username, first_name AS "firstName", last_name AS "lastName", email, is_admin AS "isAdmin"`,
       [
         username,
         hashedPassword,
@@ -87,7 +87,7 @@ class User {
         lastName,
         email,
         isAdmin,
-      ],
+      ]
     );
 
     const user = result.rows[0];
@@ -103,12 +103,12 @@ class User {
   static async findAll() {
     const result = await db.query(
       `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
-           ORDER BY username`,
+          first_name AS "firstName",
+          last_name AS "lastName",
+          email,
+          is_admin AS "isAdmin"
+        FROM users
+        ORDER BY username`,
     );
 
     return result.rows;
@@ -125,12 +125,12 @@ class User {
   static async get(username) {
     const userRes = await db.query(
       `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
-           WHERE username = $1`,
+          first_name AS "firstName",
+          last_name AS "lastName",
+          email,
+          is_admin AS "isAdmin"
+        FROM users
+        WHERE username = $1`,
       [username],
     );
 
@@ -139,7 +139,9 @@ class User {
     if (!user) throw new NotFoundError(`No user: ${username}`);
 
     const appsRes = await db.query(
-      ` SELECT job_id
+      `SELECT 
+          job_id AS "jobId", 
+          app_state AS "appState"
         FROM applications
         WHERE username = $1`,
       [user.username]
@@ -171,9 +173,7 @@ class User {
       data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
     }
 
-    const { setCols, values } = sqlForPartialUpdate(
-      data,
-      {
+    const { setCols, values } = sqlForPartialUpdate(data, {
       firstName: "first_name",
       lastName: "last_name",
       isAdmin: "is_admin",
@@ -183,11 +183,12 @@ class User {
     const querySql = `UPDATE users 
                       SET ${setCols} 
                       WHERE username = ${usernameVarIdx} 
-                      RETURNING username,
-                                first_name AS "firstName",
-                                last_name AS "lastName",
-                                email,
-                                is_admin AS "isAdmin"`;
+                      RETURNING 
+                        username,
+                        first_name AS "firstName",
+                        last_name AS "lastName",
+                        email,
+                        is_admin AS "isAdmin"`;
     const result = await db.query(querySql, [...values, username]);
     const user = result.rows[0];
 
@@ -202,9 +203,9 @@ class User {
   static async remove(username) {
     let result = await db.query(
       `DELETE
-           FROM users
-           WHERE username = $1
-           RETURNING username`,
+        FROM users
+        WHERE username = $1
+        RETURNING username`,
       [username],
     );
     const user = result.rows[0];
@@ -215,9 +216,11 @@ class User {
   /** Adds a row to Applications table for a user to apply to a job
    *
    *
-   *  @param {object} params
+   *  @param {object} params {username, jobId}
    *    @param {string} params.username username of user
    *    @param {int} params.jobId id of job
+   *
+   *  @param {string} state can be 'interested', 'applied', 'accepted', 'rejected'
    *
    *  @returns {int} jobId if successful
    *
@@ -227,9 +230,12 @@ class User {
    *
    */
 
-  static async applyForJob({ username, jobId }) {
+  static async applyForJob({ username, jobId }, appState) {
+    const ALLOWED_STATES = ["interested", "applied", "accepted", "rejected"];
+    if (!ALLOWED_STATES.includes(appState)) throw new BadRequestError("State must be one of: " + ALLOWED_STATES);
+
     const dupe = await db.query(
-      ` SELECT username
+      `SELECT username
         FROM applications
         WHERE username = $1 AND job_id = $2`,
       [username, jobId]
@@ -238,12 +244,13 @@ class User {
 
     try {
       const res = await db.query(
-        ` INSERT INTO applications (
-          username,
-          job_id)
-        VALUES ($1, $2)
-        RETURNING job_id AS "jobId"`,
-        [username, jobId]
+        `INSERT INTO applications (
+            username,
+            job_id,
+            app_state)
+          VALUES ($1, $2, $3)
+          RETURNING job_id AS "jobId"`,
+        [username, jobId, appState]
       );
       if (res.rows[0]) return res.rows[0];
     } catch (err) {
