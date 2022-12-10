@@ -56,10 +56,19 @@ describe("findAll", function () {
     let techs = await Technology.findAll();
     expect(techs).toEqual([
       {
+        name: "angular",
+      },
+      {
         name: "javascript",
       },
       {
+        name: "perl",
+      },
+      {
         name: "python",
+      },
+      {
+        name: "react",
       },
     ]);
   });

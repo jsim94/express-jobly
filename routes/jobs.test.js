@@ -188,6 +188,7 @@ describe("GET /jobs/:handle", function () {
         equity: 0,
         salary: 20000,
         title: "j1",
+        technology: ["python", "javascript", "react"],
       },
     });
   });

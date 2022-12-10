@@ -45,16 +45,16 @@ CREATE TABLE technologies (
   name VARCHAR(35) PRIMARY KEY CHECK (name = lower(name))
 );
 
--- CREATE TABLE jobs_tech (
---   job_id INTEGER
---     REFERENCES jobs ON DELETE CASCADE,
---   tech_name VARCHAR(35)
---     REFERENCES technologies ON DELETE CASCADE
--- );
+CREATE TABLE jobs_tech (
+  job_id INTEGER
+    REFERENCES jobs ON DELETE CASCADE ON UPDATE CASCADE,
+  tech_name VARCHAR(35)
+    REFERENCES technologies ON DELETE CASCADE ON UPDATE CASCADE
+);
 
--- CREATE TABLE users_tech (
---   username VARCHAR(25) 
---     REFERENCES users ON DELETE CASCADE,
---   tech_name VARCHAR(35) 
---     REFERENCES technologies ON DELETE CASCADE
--- );
+CREATE TABLE users_tech (
+  username VARCHAR(25) 
+    REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+  tech_name VARCHAR(35) 
+    REFERENCES technologies ON DELETE CASCADE ON UPDATE CASCADE
+);

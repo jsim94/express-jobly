@@ -28,14 +28,14 @@
       "minLength": 6,
       "maxLength": 60,
       "format": "email"
+    },
+    "technology": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "additionalProperties": false,
-  "required": [
-    "username",
-    "firstName",
-    "lastName",
-    "password",
-    "email"
-  ]
+  "required": ["username", "firstName", "lastName", "password", "email"]
 }

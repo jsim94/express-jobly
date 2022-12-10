@@ -70,7 +70,7 @@ async function commonBeforeAll() {
     equity: 0.8,
     companyHandle: "c1",
   });
-  await Job.create({
+  const j3 = await Job.create({
     title: "j3",
     salary: 60000,
     equity: 0,
@@ -82,6 +82,22 @@ async function commonBeforeAll() {
     equity: 0.4,
     companyHandle: "c3",
   });
+
+  await db.query(
+    `INSERT INTO jobs_tech (
+        job_id,
+        tech_name)
+      VALUES
+        (${j1.id}, 'python'),
+        (${j1.id}, 'javascript'),
+        (${j1.id}, 'react'),
+        (${j2.id}, 'python'),
+        (${j2.id}, 'javascript'),
+        (${j2.id}, 'python'),
+        (${j3.id}, 'perl'),
+        (${j3.id}, 'javascript'),
+        (${j3.id}, 'angular')`
+  );
 
   await User.applyForJob({ username: "u1", jobId: j1.id }, "applied");
   await User.applyForJob({ username: "u1", jobId: j2.id }, "applied");

@@ -19,7 +19,10 @@ async function commonBeforeAll() {
     `INSERT INTO technologies (name)
       VALUES
         ('python'),
-        ('javascript')`
+        ('javascript'),
+        ('perl'),
+        ('react'),
+        ('angular')`
   );
 
   await db.query(
@@ -71,6 +74,22 @@ async function commonBeforeAll() {
       VALUES
         ('u1', ${jobIds[0].id}, 'applied'),
         ('u1', ${jobIds[1].id}, 'interested')`
+  );
+
+  await db.query(
+    `INSERT INTO jobs_tech (
+        job_id,
+        tech_name)
+      VALUES
+        (${jobIds[0].id}, 'python'),
+        (${jobIds[0].id}, 'javascript'),
+        (${jobIds[0].id}, 'react'),
+        (${jobIds[1].id}, 'python'),
+        (${jobIds[1].id}, 'javascript'),
+        (${jobIds[1].id}, 'python'),
+        (${jobIds[2].id}, 'perl'),
+        (${jobIds[2].id}, 'javascript'),
+        (${jobIds[2].id}, 'angular')`
   );
 }
 

@@ -31,14 +31,14 @@
     },
     "isAdmin": {
       "type": "boolean"
+    },
+    "technology": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "additionalProperties": false,
-  "required": [
-    "username",
-    "firstName",
-    "lastName",
-    "password",
-    "email"
-  ]
+  "required": ["username", "firstName", "lastName", "password", "email"]
 }

@@ -16,7 +16,7 @@ afterAll(commonAfterAll);
 
 describe("POST /technology", function () {
   const newTech = {
-    name: "react",
+    name: "git",
   };
 
   test("ok for users", async function () {
@@ -60,10 +60,19 @@ describe("GET /technology", function () {
     expect(resp.body).toEqual({
       technologies: [
         {
+          name: "angular",
+        },
+        {
           name: "javascript",
         },
         {
+          name: "perl",
+        },
+        {
           name: "python",
+        },
+        {
+          name: "react",
         },
       ],
     });
@@ -95,7 +104,9 @@ describe("GET /technology", function () {
     });
 
     test("min over max", async function () {
-      const resp = await request(app).get("/technology").send({ minEmployees: 3, maxEmployees: 2 });
+      const resp = await request(app)
+        .get("/technology")
+        .send({ minEmployees: 3, maxEmployees: 2 });
       expect(resp.statusCode).toEqual(400);
     });
 

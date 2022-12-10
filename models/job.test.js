@@ -24,6 +24,7 @@ describe("create", function () {
     salary: 80000,
     equity: 0.6,
     companyHandle: "c1",
+    technology: ["javascript", "python", "perl"],
   };
 
   test("works", async function () {
@@ -95,6 +96,7 @@ describe("findAll", function () {
       },
     ]);
   });
+  
   test("works: minSalary filter", async function () {
     let companies = await Job.findAll({ minSalary: 50000 });
     expect(companies).toEqual([
@@ -135,6 +137,19 @@ describe("findAll", function () {
     ]);
   });
 
+  test("works: tech filter and equity", async function () {
+    let companies = await Job.findAll({ technology: ["python", "react"], hasEquity: true });
+    expect(companies).toEqual([
+      {
+        id: expect.any(Number),
+        companyHandle: "c1",
+        equity: 0.8,
+        salary: 40000,
+        title: "j2",
+      },
+    ]);
+  });
+
   test("works: minSalary and equity filter", async function () {
     let companies = await Job.findAll({ minSalary: 50000, hasEquity: true });
     expect(companies).toEqual([
@@ -163,6 +178,7 @@ describe("get", function () {
       equity: 0,
       salary: 20000,
       title: "j1",
+      technology: ["python", "javascript", "react"],
     });
   });
 
@@ -183,6 +199,7 @@ describe("update", function () {
     title: "newTitle",
     salary: 60000,
     equity: 0.2,
+    technology: ["react", "angular"],
   };
   const badUpdateData = {
     title: "newTitle2",
@@ -197,6 +214,7 @@ describe("update", function () {
     expect(job).toEqual({
       id: expect.any(Number),
       companyHandle: "c1",
+      technology: ["react", "angular"],
       ...goodUpdateData,
     });
 

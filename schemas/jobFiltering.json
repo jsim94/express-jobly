@@ -14,6 +14,12 @@
     "hasEquity": {
       "type": "boolean",
       "minLength": 0
+    },
+    "technology": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "additionalProperties": false,
