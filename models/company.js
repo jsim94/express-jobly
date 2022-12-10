@@ -63,8 +63,8 @@ class Company {
 
     // generate a WHERE *name* string
     if (name) {
-      params.push(name);
-      paramStrings.nameString = `name ILIKE $${params.length}`;
+      params.push("%" + name + "%");
+      paramStrings.nameString = `name ILIKE $${params.length} `;
     }
 
     // generate a WHERE *range* string

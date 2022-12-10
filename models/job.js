@@ -7,15 +7,6 @@ const { checkAllowedKeys } = require("../helpers/checkAllowedKeys");
 
 /** Related functions for companies. */
 
-// CREATE TABLE jobs (
-//   id SERIAL PRIMARY KEY,
-//   title TEXT NOT NULL,
-//   salary INTEGER CHECK (salary >= 0),
-//   equity NUMERIC CHECK (equity <= 1.0),
-//   company_handle VARCHAR(25) NOT NULL
-//     REFERENCES companies ON DELETE CASCADE
-// );
-
 class Job {
   /** Create a job (from data), update db, return new company data.
    *
@@ -59,7 +50,7 @@ class Job {
 
     // generate a WHERE *title* string
     if (title) {
-      params.push(title);
+      params.push("%" + title + "%");
       paramStrings.title = `title ILIKE $${params.length}`;
     }
 
