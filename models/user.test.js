@@ -3,7 +3,7 @@
 const {
   NotFoundError,
   BadRequestError,
-  UnauthorizedError,
+  UnauthorizedError
 } = require("../expressError");
 const db = require("../db.js");
 const User = require("./user.js");
@@ -12,7 +12,7 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
-  getJob1Id,
+  getJob1Id
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -151,6 +151,7 @@ describe("get", function () {
           appState: "interested",
         },
       ],
+      technology: ["python", "javascript", "react"],
     });
   });
 
@@ -178,6 +179,7 @@ describe("update", function () {
     let job = await User.update("u1", updateData);
     expect(job).toEqual({
       username: "u1",
+      technology: ["python", "javascript", "react"],
       ...updateData,
     });
   });
@@ -192,6 +194,7 @@ describe("update", function () {
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      technology: ["python", "javascript", "react"],
     });
     const found = await db.query("SELECT * FROM users WHERE username = 'u1'");
     expect(found.rows.length).toEqual(1);

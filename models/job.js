@@ -246,7 +246,6 @@ class Job {
       job.technology = techRes.rows.map((t) => t.name);
     }
 
-    console.log(job);
     return job;
   }
 

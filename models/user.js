@@ -6,7 +6,7 @@ const { sqlForPartialUpdate } = require("../helpers/sql");
 const {
   NotFoundError,
   BadRequestError,
-  UnauthorizedError,
+  UnauthorizedError
 } = require("../expressError");
 
 const { BCRYPT_WORK_FACTOR } = require("../config.js");
@@ -14,6 +14,57 @@ const { BCRYPT_WORK_FACTOR } = require("../config.js");
 /** Related functions for users. */
 
 class User {
+  /** Remove existing rows from users_tech and adds new rows based on passed technology array.
+   *
+   *  @param {String} username
+   *
+   *  @param {Array<String>} technology Array of technologies to link to the user.
+   *
+   *  Returns array of technogies added to the user.
+   *
+   * */
+
+  static async updateTechnology(username, technology) {
+    // ISSUE - attempting to use a transaction to rollback any caught error causes issues with querys after this method executes. Following node-pg docs to use transactions with a pool did not improve results.
+
+    // const db = await db.connect();
+    // try {
+    // await client.query("BEGIN");
+    await db.query(
+      `DELETE FROM users_tech
+        WHERE username = $1
+        RETURNING tech_name AS techName`,
+      [username]
+    );
+
+    if (technology.length === 0) return [];
+
+    const valueString = ((techLen) => {
+      let s = [];
+      for (let i = 0; i < techLen; i++) {
+        s.push(`($1, $${i + 2})`);
+      }
+      return s.join(",");
+    })(technology.length);
+
+    const result = await db.query(
+      `INSERT INTO users_tech
+            (username, tech_name)
+          VALUES ${valueString}
+          RETURNING tech_name AS name, username`,
+      [username, ...technology]
+    );
+
+    // await db.query("COMMIT");
+    return result.rows.map((val) => val.name);
+    // } catch (err) {
+    // await client.query("ROLLBACK");
+    // throw err;
+    // } finally {
+    //   client.release();
+    // }
+  }
+
   /** authenticate user with username, password.
    *
    * Returns { username, first_name, last_name, email, is_admin }
@@ -32,7 +83,7 @@ class User {
           is_admin AS "isAdmin"
         FROM users
         WHERE username = $1`,
-      [username],
+      [username]
     );
 
     const user = result.rows[0];
@@ -51,12 +102,28 @@ class User {
 
   /** Register user with data.
    *
-   * Returns { username, firstName, lastName, email, isAdmin }
-   *
+   * Returns { username, firstName, lastName, email, isAdmin, technology }
+   *   Where technology: [{ name }]
    * Throws BadRequestError on duplicates.
    **/
 
-  static async register({ username, password, firstName, lastName, email, isAdmin }) {
+  /** Register user with data.
+   *
+   *  @param {object} data form data
+   *    @param {string} data.username
+   *    @param {string} data.password
+   *    @param {string} data.firstName
+   *    @param {string} data.lastName
+   *    @param {string} data.email
+   *    @param {boolean} data.isAdmin
+   *    @param {array<string>} data.technology
+   *
+   *    @returns {object}  { username, firstName, lastName, email, isAdmin, technology }
+   *      where technlogy = [{ name }, ...]
+   *
+   * */
+
+  static async register({ username, password, firstName, lastName, email, isAdmin, technology }) {
     const duplicateCheck = await db.query(
       `SELECT username
         FROM users
@@ -86,11 +153,15 @@ class User {
         firstName,
         lastName,
         email,
-        isAdmin,
+        isAdmin
       ]
     );
 
     const user = result.rows[0];
+
+    if (user && technology) {
+      user.technology = await User.updateTechnology(user.username, technology);
+    }
 
     return user;
   }
@@ -108,7 +179,7 @@ class User {
           email,
           is_admin AS "isAdmin"
         FROM users
-        ORDER BY username`,
+        ORDER BY username`
     );
 
     return result.rows;
@@ -117,7 +188,8 @@ class User {
   /** Given a username, return data about user.
    *
    * Returns { username, first_name, last_name, is_admin, jobs }
-   *   where jobs is { jobId }
+   *   where jobs is [{ jobId }...]
+   *   where technology is [{ name }...]
    *
    * Throws NotFoundError if user not found.
    **/
@@ -131,7 +203,7 @@ class User {
           is_admin AS "isAdmin"
         FROM users
         WHERE username = $1`,
-      [username],
+      [username]
     );
 
     const user = userRes.rows[0];
@@ -148,6 +220,16 @@ class User {
     );
     user.jobs = appsRes.rows;
 
+    const techRes = await db.query(
+      `SELECT 
+          tech_name AS name
+        FROM users_tech
+        WHERE username = $1`,
+      [user.username]
+    );
+
+    user.technology = techRes.rows.map((t) => t.name);
+
     return user;
   }
 
@@ -159,7 +241,8 @@ class User {
    * Data can include:
    *   { firstName, lastName, password, email, isAdmin }
    *
-   * Returns { username, firstName, lastName, email, isAdmin }
+   * Returns { username, firstName, lastName, email, isAdmin, technology }
+   *   where technology: [{ name }...]
    *
    * Throws NotFoundError if not found.
    *
@@ -172,6 +255,9 @@ class User {
     if (data.password) {
       data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
     }
+
+    const technology = data.technology;
+    delete data.technology;
 
     const { setCols, values } = sqlForPartialUpdate(data, {
       firstName: "first_name",
@@ -194,6 +280,20 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
 
+    if (technology) {
+      user.technology = await User.updateTechnology(user.username, technology);
+    } else {
+      const techRes = await db.query(
+        `SELECT 
+          tech_name AS name
+        FROM users_tech
+        WHERE username = $1`,
+        [user.username]
+      );
+
+      user.technology = techRes.rows.map((t) => t.name);
+    }
+
     delete user.password;
     return user;
   }
@@ -206,7 +306,7 @@ class User {
         FROM users
         WHERE username = $1
         RETURNING username`,
-      [username],
+      [username]
     );
     const user = result.rows[0];
 

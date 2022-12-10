@@ -268,6 +268,7 @@ describe("GET /users/:username", function () {
             appState: "applied",
           },
         ],
+        technology: ["python", "javascript", "react"],
       },
     });
   });
@@ -310,6 +311,26 @@ describe("PATCH /users/:username", () => {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: true,
+        technology: ["python", "javascript", "react"],
+      },
+    });
+  });
+
+  test("works for users", async function () {
+    const resp = await request(app)
+      .patch(`/users/u1`)
+      .send({
+        firstName: "New",
+      })
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.body).toEqual({
+      user: {
+        username: "u1",
+        firstName: "New",
+        lastName: "U1L",
+        email: "user1@user.com",
+        isAdmin: true,
+        technology: ["python", "javascript", "react"],
       },
     });
   });
@@ -367,6 +388,7 @@ describe("PATCH /users/:username", () => {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: true,
+        technology: ["python", "javascript", "react"],
       },
     });
     const isSuccessful = await User.authenticate("u1", "new-password");

@@ -99,6 +99,19 @@ async function commonBeforeAll() {
         (${j3.id}, 'angular')`
   );
 
+  await db.query(
+    `INSERT INTO users_tech (
+        username,
+        tech_name)
+      VALUES
+        ('u1', 'python'),
+        ('u1', 'javascript'),
+        ('u1', 'react'),
+        ('u2', 'python'),
+        ('u2', 'perl'),
+        ('u2', 'angular')`
+  );
+
   await User.applyForJob({ username: "u1", jobId: j1.id }, "applied");
   await User.applyForJob({ username: "u1", jobId: j2.id }, "applied");
 }
