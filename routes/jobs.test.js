@@ -217,6 +217,7 @@ describe("PATCH /jobs/:id", function () {
         equity: 0,
         salary: 20000,
         title: "J1-new",
+        technology: ["python", "javascript", "react"],
       },
     });
   });

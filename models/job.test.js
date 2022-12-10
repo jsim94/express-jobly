@@ -96,7 +96,7 @@ describe("findAll", function () {
       },
     ]);
   });
-  
+
   test("works: minSalary filter", async function () {
     let companies = await Job.findAll({ minSalary: 50000 });
     expect(companies).toEqual([
@@ -234,6 +234,32 @@ describe("update", function () {
     ]);
   });
 
+  test("works null technology", async function () {
+    const job1Id = await getJob1Id();
+    let job = await Job.update(job1Id, { ...goodUpdateData, technology: [] });
+    expect(job).toEqual({
+      id: expect.any(Number),
+      companyHandle: "c1",
+      ...goodUpdateData,
+      technology: [],
+    });
+
+    const result = await db.query(
+      ` SELECT id, title, salary, equity, company_handle as "companyHandle"
+        FROM jobs
+        WHERE title = 'newTitle'`
+    );
+    expect(result.rows).toEqual([
+      {
+        id: expect.any(Number),
+        title: "newTitle",
+        salary: 60000,
+        equity: 0.2,
+        companyHandle: "c1",
+      },
+    ]);
+  });
+
   test("works: null fields", async function () {
     const job1Id = await getJob1Id();
     const updateDataSetNulls = {
@@ -246,6 +272,7 @@ describe("update", function () {
       id: expect.any(Number),
       companyHandle: "c1",
       equity: 0,
+      technology: ["python", "javascript", "react"],
       ...updateDataSetNulls,
     });
 

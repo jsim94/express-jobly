@@ -31,6 +31,8 @@ class Job {
       [jobId]
     );
 
+    if (technology.length === 0) return [];
+
     const valueString = ((techLen) => {
       let s = [];
       for (let i = 0; i < techLen; i++) {
@@ -157,7 +159,8 @@ class Job {
 
   /** Given a job id, return data about job.
    *
-   * Returns { title, salary, equity, companyHandle }
+   * Returns { title, salary, equity, companyHandle, technology }
+   *   where technology: [{ name }...]
    *
    * Throws NotFoundError if not found.
    **/
@@ -198,7 +201,8 @@ class Job {
    *
    * Data can include: {title, salary, equity}
    *
-   * Returns {title, salary, equity, companyHandle}
+   * Returns { title, salary, equity, companyHandle, technology }
+   *   where technology: [{ name }...]
    *
    * Throws NotFoundError if not found.
    */
@@ -230,7 +234,19 @@ class Job {
 
     if (technology) {
       job.technology = await Job.updateTechnology(job.id, technology);
+    } else {
+      const techRes = await db.query(
+        `SELECT 
+          tech_name AS name
+        FROM jobs_tech
+        WHERE job_id = $1`,
+        [job.id]
+      );
+
+      job.technology = techRes.rows.map((t) => t.name);
     }
+
+    console.log(job);
     return job;
   }
 
